@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35327.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flam", "Flam.csproj", "{1960FFB2-FB84-4848-8715-E102CADB67E1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MoonWorks", "..\MoonWorks\MoonWorks.csproj", "{029DD766-9408-4CE6-9432-B46C8A7D1654}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1960FFB2-FB84-4848-8715-E102CADB67E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1960FFB2-FB84-4848-8715-E102CADB67E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1960FFB2-FB84-4848-8715-E102CADB67E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1960FFB2-FB84-4848-8715-E102CADB67E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{029DD766-9408-4CE6-9432-B46C8A7D1654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{029DD766-9408-4CE6-9432-B46C8A7D1654}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{029DD766-9408-4CE6-9432-B46C8A7D1654}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{029DD766-9408-4CE6-9432-B46C8A7D1654}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6EA108F3-589A-4677-8FE0-7F75C77BED38}
+	EndGlobalSection
+EndGlobal
