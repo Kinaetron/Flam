@@ -6,8 +6,19 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+	<ItemGroup>
+		<Content Include="shaders\**\*.*">
+			<Link>shaders\%(RecursiveDir)%(Filename)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MoonWorks\MoonWorks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="shaders\" />
   </ItemGroup>
 
   <Import Project=".\CopyMoonlibs.targets" />
