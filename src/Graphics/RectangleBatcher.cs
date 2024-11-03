@@ -163,6 +163,10 @@ public class RectangleBatcher
 
     public void Draw(Vector3 position, float rotation, Vector2 size, Color color)
     {
+        if(_quadCount >= MAX_QUAD_COUNT) {
+            End();
+        }
+
         InstanceData[_quadCount] = new SpriteInstanceData
         {
             Position = position,
@@ -213,6 +217,8 @@ public class RectangleBatcher
 
         if(swapchainTexture != null)
         {
+            _batchMatrix *= _worldSpace;
+
             var copyPass = commandBuffer.BeginCopyPass();
             copyPass.UploadToBuffer(_quadVertexTransferBuffer, _quadVertexBuffer, true);
             commandBuffer.EndCopyPass(copyPass);
@@ -223,7 +229,7 @@ public class RectangleBatcher
             renderPass.BindGraphicsPipeline(_renderPipeline);
             renderPass.BindVertexBuffer(_quadVertexBuffer);
             renderPass.BindIndexBuffer(_quadIndexBuffer, IndexElementSize.ThirtyTwo);
-            commandBuffer.PushVertexUniformData(_worldSpace);
+            commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(MAX_QUAD_COUNT * 6, 1, 0, 0, 0);
 
             commandBuffer.EndRenderPass(renderPass);
