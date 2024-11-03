@@ -1,4 +1,4 @@
-struct SpriteComputeData
+struct QuadComputeData
 {
     float3 position;
     float rotation;
@@ -6,32 +6,31 @@ struct SpriteComputeData
     float4 color;
 };
 
-struct SpriteVertex
+struct QuadVertex
 {
     float4 position;
-    float2 texcoord;
     float4 color;
 };
 
-StructuredBuffer<SpriteComputeData> ComputeBuffer : register(t0, space0);
-RWStructuredBuffer<SpriteVertex> VertexBuffer : register(u0, space1);
+StructuredBuffer<QuadComputeData> ComputeBuffer : register(t0, space0);
+RWStructuredBuffer<QuadVertex> VertexBuffer : register(u0, space1);
 
 [numthreads(64, 1, 1)]
 void main(uint3 GlobalInvocationID : SV_DispatchThreadID)
 {
     uint n = GlobalInvocationID.x;
 
-    SpriteComputeData currentSpriteData = ComputeBuffer[n];
+    QuadComputeData currentQuadData = ComputeBuffer[n];
 
     float4x4 Scale = float4x4(
-        float4(currentSpriteData.scale.x, 0.0f, 0.0f, 0.0f),
-        float4(0.0f, currentSpriteData.scale.y, 0.0f, 0.0f),
+        float4(currentQuadData.scale.x, 0.0f, 0.0f, 0.0f),
+        float4(0.0f, currentQuadData.scale.y, 0.0f, 0.0f),
         float4(0.0f, 0.0f, 1.0f, 0.0f),
         float4(0.0f, 0.0f, 0.0f, 1.0f)
     );
 
-    float c = cos(currentSpriteData.rotation);
-    float s = sin(currentSpriteData.rotation);
+    float c = cos(currentQuadData.rotation);
+    float s = sin(currentQuadData.rotation);
 
     float4x4 Rotation = float4x4(
         float4(   c,    s, 0.0f, 0.0f),
@@ -44,7 +43,7 @@ void main(uint3 GlobalInvocationID : SV_DispatchThreadID)
         float4(1.0f, 0.0f, 0.0f, 0.0f),
         float4(0.0f, 1.0f, 0.0f, 0.0f),
         float4(0.0f, 0.0f, 1.0f, 0.0f),
-        float4(currentSpriteData.position.x, currentSpriteData.position.y, currentSpriteData.position.z, 1.0f)
+        float4(currentQuadData.position.x, currentQuadData.position.y, currentQuadData.position.z, 1.0f)
     );
 
     float4x4 Model = mul(Scale, mul(Rotation, Translation));
@@ -59,13 +58,8 @@ void main(uint3 GlobalInvocationID : SV_DispatchThreadID)
     VertexBuffer[n * 4u + 2].position = mul(bottomLeft, Model);
     VertexBuffer[n * 4u + 3].position = mul(bottomRight, Model);
 
-    VertexBuffer[n * 4u]    .texcoord = float2(0.0f, 0.0f);
-    VertexBuffer[n * 4u + 1].texcoord = float2(1.0f, 0.0f);
-    VertexBuffer[n * 4u + 2].texcoord = float2(0.0f, 1.0f);
-    VertexBuffer[n * 4u + 3].texcoord = float2(1.0f, 1.0f);
-
-    VertexBuffer[n * 4u]    .color = currentSpriteData.color;
-    VertexBuffer[n * 4u + 1].color = currentSpriteData.color;
-    VertexBuffer[n * 4u + 2].color = currentSpriteData.color;
-    VertexBuffer[n * 4u + 3].color = currentSpriteData.color;
+    VertexBuffer[n * 4u]    .color = currentQuadData.color;
+    VertexBuffer[n * 4u + 1].color = currentQuadData.color;
+    VertexBuffer[n * 4u + 2].color = currentQuadData.color;
+    VertexBuffer[n * 4u + 3].color = currentQuadData.color;
 }

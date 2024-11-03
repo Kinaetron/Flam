@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="shaders\" />
+    <Content Update="shaders\QuadBatch.comp.hlsl" Link="shaders\QuadBatch.comp.hlsl" />
   </ItemGroup>
 
   <Import Project=".\CopyMoonlibs.targets" />
