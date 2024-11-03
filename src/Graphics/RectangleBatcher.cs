@@ -1,4 +1,5 @@
-﻿using MoonWorks;
+﻿using Flam.Shapes;
+using MoonWorks;
 using MoonWorks.Graphics;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -159,6 +160,15 @@ public class RectangleBatcher
     {
         _batchMatrix = matrix;
         _clearColor = clearColor;
+    }
+
+    public void Draw(Rectangle rectangle, float rotation, Color color)
+    {
+        Draw(
+            new Vector3(rectangle.Position, 0f), 
+            rotation, 
+            new Vector2(rectangle.Width, rectangle.Height), 
+            color);
     }
 
     public void Draw(Vector3 position, float rotation, Vector2 size, Color color)
