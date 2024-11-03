@@ -112,7 +112,7 @@ public class RectangleBatcher
             MultisampleState = MultisampleState.None,
             PrimitiveType = PrimitiveType.TriangleList,
             RasterizerState = RasterizerState.CCW_CullNone,
-            VertexInputState = VertexInputState.Empty,
+            VertexInputState = VertexInputState.CreateSingleBinding<PositionColorVertex>(),
             VertexShader = vertexShader,
             FragmentShader = fragmentShader
         };
