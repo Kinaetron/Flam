@@ -9,42 +9,36 @@ namespace Flam.Graphics;
 
 public class RectangleBatcher
 {
-    [StructLayout(LayoutKind.Explicit, Size =48)]
-    struct ComputeQuadData
+    private int _quadCount = 0;
+    const int MAX_QUAD_COUNT = 8192;
+
+    struct SpriteInstanceData
     {
-        [FieldOffset(0)]
         public Vector3 Position;
-
-        [FieldOffset(12)]
         public float Rotation;
-
-        [FieldOffset(16)]
         public Vector2 Size;
-
-        [FieldOffset(32)]
         public Vector4 Color;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    SpriteInstanceData[] InstanceData = new SpriteInstanceData[MAX_QUAD_COUNT];
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PositionColorVertex : IVertexType
     {
-        public Vector3 Position;
-        public Color Color;
+        [FieldOffset(0)]
+        public Vector4 Position;
 
-        public PositionColorVertex(Vector3 position, Color color)
-        {
-            Position = position;
-            Color = color;
-        }
+        [FieldOffset(16)]
+        public Vector4 Color;
 
         public static VertexElementFormat[] Formats { get; } =
         [
-            VertexElementFormat.Float3,
-        VertexElementFormat.Ubyte4Norm
+            VertexElementFormat.Float4,
+            VertexElementFormat.Float4
         ];
 
         public static uint[] Offsets { get; } =
-        [0, 12];
+        [0, 16];
 
         public override string ToString()
         {
@@ -52,22 +46,17 @@ public class RectangleBatcher
         }
     }
 
-    private int _rectangleCount = 0;
-    const int MAX_QUAD_COUNT = 8192;
-
     private readonly Window _window;
     private readonly GraphicsPipeline _renderPipeline;
-    private readonly  ComputePipeline _computePipeline;
     private readonly GraphicsDevice _graphicsDevice;
+    private readonly TransferBuffer _quadVertexTransferBuffer;
 
     private Color _clearColor;
     private readonly Matrix4x4 _worldSpace;
     private Matrix4x4 _batchMatrix = Matrix4x4.Identity;
 
-    private readonly Buffer _quadComputeBuffer;
     private readonly Buffer _quadVertexBuffer;
     private readonly Buffer _quadIndexBuffer;
-    private readonly TransferBuffer _quadComputeTransferBuffer;
 
 
     public RectangleBatcher(Window window, GraphicsDevice graphicsDevice)
@@ -119,33 +108,14 @@ public class RectangleBatcher
 
         _renderPipeline = GraphicsPipeline.Create(_graphicsDevice, renderPipelineCreateInfo);
 
-        _computePipeline = ShaderCross.Create(
-           _graphicsDevice,
-           $"{SDL3.SDL.SDL_GetBasePath()}/shaders/QuadBatch.comp.hlsl",
-           "main",
-           new ShaderCross.ComputePipelineCreateInfo
-           {
-               Format = ShaderCross.ShaderFormat.HLSL,
-               NumReadonlyStorageBuffers = 1,
-               NumReadWriteStorageBuffers = 1,
-               ThreadCountX = 64,
-               ThreadCountY = 1,
-               ThreadCountZ = 1
-           });
-
-        _quadComputeTransferBuffer = TransferBuffer.Create<ComputeQuadData>(
-            _graphicsDevice,
-            TransferBufferUsage.Upload,
-            MAX_QUAD_COUNT);
-
-        _quadComputeBuffer = Buffer.Create<ComputeQuadData>(
-            _graphicsDevice,
-            BufferUsageFlags.ComputeStorageRead,
-            MAX_QUAD_COUNT);
-
         _quadVertexBuffer = Buffer.Create<PositionColorVertex>(
             _graphicsDevice,
-            BufferUsageFlags.ComputeStorageWrite | BufferUsageFlags.Vertex,
+            BufferUsageFlags.Vertex,
+            MAX_QUAD_COUNT * 4);
+
+        _quadVertexTransferBuffer = TransferBuffer.Create<PositionColorVertex>(
+            _graphicsDevice,
+            TransferBufferUsage.Upload,
             MAX_QUAD_COUNT * 4);
 
         _quadIndexBuffer = Buffer.Create<uint>(
@@ -193,50 +163,71 @@ public class RectangleBatcher
 
     public void Draw(Vector3 position, float rotation, Vector2 size, Color color)
     {
-        var data = _quadComputeTransferBuffer.Map<ComputeQuadData>(true);
+        InstanceData[_quadCount] = new SpriteInstanceData
+        {
+            Position = position,
+            Rotation = rotation,
+            Size = size,
+            Color = color.ToVector4()
+        };
 
-        data[_rectangleCount].Position = position;
-        data[_rectangleCount].Rotation = rotation;
-        data[_rectangleCount].Size = size;
-        data[_rectangleCount].Color = color.ToVector4();
-        _quadComputeTransferBuffer.Unmap();
+        var dataSpan = _quadVertexTransferBuffer.Map<PositionColorVertex>(true);
 
-        _rectangleCount++;
+        var transform =
+                   Matrix4x4.CreateScale(InstanceData[_quadCount].Size.X, InstanceData[_quadCount].Size.Y, 1) *
+                   Matrix4x4.CreateRotationZ(InstanceData[_quadCount].Rotation) *
+                   Matrix4x4.CreateTranslation(InstanceData[_quadCount].Position);
+
+        dataSpan[_quadCount*4] = new PositionColorVertex
+        {
+            Position = new Vector4(Vector3.Transform(new Vector3(0, 0, 0), transform), 1),
+            Color = InstanceData[_quadCount].Color
+        };
+
+        dataSpan[_quadCount*4 + 1] = new PositionColorVertex
+        {
+            Position = new Vector4(Vector3.Transform(new Vector3(1, 0, 0), transform), 1),
+            Color = InstanceData[_quadCount].Color
+        };
+
+        dataSpan[_quadCount*4 + 2] = new PositionColorVertex
+        {
+            Position = new Vector4(Vector3.Transform(new Vector3(0, 1, 0), transform), 1),
+            Color = InstanceData[_quadCount].Color
+        };
+
+        dataSpan[_quadCount*4 + 3] = new PositionColorVertex
+        {
+            Position = new Vector4(Vector3.Transform(new Vector3(1, 1, 0), transform), 1),
+            Color = InstanceData[_quadCount].Color
+        };
+
+        _quadVertexTransferBuffer.Unmap();
+
+        _quadCount++;
     }
     public void End()
     {
-        _rectangleCount = 0;
         var commandBuffer = _graphicsDevice.AcquireCommandBuffer();
         var swapchainTexture = commandBuffer.AcquireSwapchainTexture(_window);
 
         if(swapchainTexture != null)
         {
             var copyPass = commandBuffer.BeginCopyPass();
-            copyPass.UploadToBuffer(_quadComputeTransferBuffer, _quadComputeBuffer, true);
+            copyPass.UploadToBuffer(_quadVertexTransferBuffer, _quadVertexBuffer, true);
             commandBuffer.EndCopyPass(copyPass);
 
-            var computePass = commandBuffer.BeginComputePass(
-                new StorageBufferReadWriteBinding(_quadVertexBuffer, true)
-            );
-
-            computePass.BindComputePipeline(_computePipeline);
-            computePass.BindStorageBuffer(_quadComputeBuffer);
-            computePass.Dispatch(MAX_QUAD_COUNT / 64, 1, 1);
-
-            commandBuffer.EndComputePass(computePass);
-
             var renderPass = commandBuffer.BeginRenderPass(
-                new ColorTargetInfo(swapchainTexture, _clearColor)
-            );
-
-            commandBuffer.PushVertexUniformData(_worldSpace);
+            new ColorTargetInfo(swapchainTexture, _clearColor));
 
             renderPass.BindGraphicsPipeline(_renderPipeline);
             renderPass.BindVertexBuffer(_quadVertexBuffer);
             renderPass.BindIndexBuffer(_quadIndexBuffer, IndexElementSize.ThirtyTwo);
+            commandBuffer.PushVertexUniformData(_worldSpace);
             renderPass.DrawIndexedPrimitives(MAX_QUAD_COUNT * 6, 1, 0, 0, 0);
 
             commandBuffer.EndRenderPass(renderPass);
+            _quadCount = 0;
         }
 
         _graphicsDevice.Submit(commandBuffer);

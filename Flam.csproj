@@ -17,10 +17,6 @@
     <ProjectReference Include="..\MoonWorks\MoonWorks.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Update="shaders\QuadBatch.comp.hlsl" Link="shaders\QuadBatch.comp.hlsl" />
-  </ItemGroup>
-
   <Import Project=".\CopyMoonlibs.targets" />
 
 </Project>
