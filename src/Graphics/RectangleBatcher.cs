@@ -56,19 +56,18 @@ public class RectangleBatcher
     const int MAX_QUAD_COUNT = 8192;
 
     private readonly Window _window;
-    private GraphicsPipeline _renderPipeline;
-    private ComputePipeline _computePipeline;
+    private readonly GraphicsPipeline _renderPipeline;
+    private readonly  ComputePipeline _computePipeline;
     private readonly GraphicsDevice _graphicsDevice;
 
     private Color _clearColor;
     private readonly Matrix4x4 _worldSpace;
     private Matrix4x4 _batchMatrix = Matrix4x4.Identity;
-    private ComputeQuadData[] _quadDataArray = new ComputeQuadData[MAX_QUAD_COUNT];
 
-    private Buffer _quadComputeBuffer;
-    private Buffer _quadVertexBuffer;
-    private Buffer _quadIndexBuffer;
-    private TransferBuffer _quadComputeTransferBuffer;
+    private readonly Buffer _quadComputeBuffer;
+    private readonly Buffer _quadVertexBuffer;
+    private readonly Buffer _quadIndexBuffer;
+    private readonly TransferBuffer _quadComputeTransferBuffer;
 
 
     public RectangleBatcher(Window window, GraphicsDevice graphicsDevice)
@@ -154,12 +153,12 @@ public class RectangleBatcher
             BufferUsageFlags.Index,
             MAX_QUAD_COUNT * 6);
 
-        var spriteIndexTransferBuffer = TransferBuffer.Create<uint>(
+        var quadIndexTransferBuffer = TransferBuffer.Create<uint>(
             _graphicsDevice,
             TransferBufferUsage.Upload,
             MAX_QUAD_COUNT * 6);
 
-        var indexSpan = spriteIndexTransferBuffer.Map<uint>(false);
+        var indexSpan = quadIndexTransferBuffer.Map<uint>(false);
         for (int i = 0, j = 0; i < MAX_QUAD_COUNT * 6; i += 6, j += 4)
         {
             indexSpan[i]     =  (uint)j;
@@ -169,13 +168,13 @@ public class RectangleBatcher
             indexSpan[i + 4] =  (uint)j + 2;
             indexSpan[i + 5] =  (uint)j + 1;
         }
-        spriteIndexTransferBuffer.Unmap();
+        quadIndexTransferBuffer.Unmap();
 
-        var cmdbuf = _graphicsDevice.AcquireCommandBuffer();
-        var copyPass = cmdbuf.BeginCopyPass();
-        copyPass.UploadToBuffer(spriteIndexTransferBuffer, _quadIndexBuffer, false);
-        cmdbuf.EndCopyPass(copyPass);
-        _graphicsDevice.Submit(cmdbuf);
+        var commandBuffer = _graphicsDevice.AcquireCommandBuffer();
+        var copyPass = commandBuffer.BeginCopyPass();
+        copyPass.UploadToBuffer(quadIndexTransferBuffer, _quadIndexBuffer, false);
+        commandBuffer.EndCopyPass(copyPass);
+        _graphicsDevice.Submit(commandBuffer);
 
         _worldSpace = Matrix4x4.CreateOrthographicOffCenter(
             0,
@@ -206,17 +205,16 @@ public class RectangleBatcher
     }
     public void End()
     {
+        _rectangleCount = 0;
         var commandBuffer = _graphicsDevice.AcquireCommandBuffer();
         var swapchainTexture = commandBuffer.AcquireSwapchainTexture(_window);
 
         if(swapchainTexture != null)
         {
-            // Upload compute data to buffer
             var copyPass = commandBuffer.BeginCopyPass();
             copyPass.UploadToBuffer(_quadComputeTransferBuffer, _quadComputeBuffer, true);
             commandBuffer.EndCopyPass(copyPass);
 
-            // Set up compute pass to build sprite vertex buffer
             var computePass = commandBuffer.BeginComputePass(
                 new StorageBufferReadWriteBinding(_quadVertexBuffer, true)
             );
@@ -227,7 +225,6 @@ public class RectangleBatcher
 
             commandBuffer.EndComputePass(computePass);
 
-            // Render sprites using vertex buffer
             var renderPass = commandBuffer.BeginRenderPass(
                 new ColorTargetInfo(swapchainTexture, _clearColor)
             );
@@ -243,6 +240,5 @@ public class RectangleBatcher
         }
 
         _graphicsDevice.Submit(commandBuffer);
-        _rectangleCount = 0;
     }
 }
