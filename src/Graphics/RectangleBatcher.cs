@@ -1,5 +1,6 @@
 ﻿using Flam.Shapes;
 using MoonWorks;
+using MoonWorks.Audio;
 using MoonWorks.Graphics;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -69,22 +70,20 @@ public class RectangleBatcher
             _graphicsDevice,
             $"{SDL3.SDL.SDL_GetBasePath()}/shaders/Quad.vert.hlsl",
             "main",
-            new ShaderCross.ShaderCreateInfo
-            {
-                Format = ShaderCross.ShaderFormat.HLSL,
-                Stage = ShaderStage.Vertex,
-                NumUniformBuffers = 1
-            });
+             ShaderCross.ShaderFormat.HLSL,
+             ShaderStage.Vertex,
+             new ShaderCross.ShaderResourceInfo
+             {
+                 NumUniformBuffers = 1
+             });
 
         var fragmentShader = ShaderCross.Create(
             _graphicsDevice,
             $"{SDL3.SDL.SDL_GetBasePath()}/shaders/Quad.frag.hlsl",
             "main",
-            new ShaderCross.ShaderCreateInfo
-            {
-                Format = ShaderCross.ShaderFormat.HLSL,
-                Stage = ShaderStage.Fragment,
-            });
+             ShaderCross.ShaderFormat.HLSL,
+             ShaderStage.Fragment
+             );
 
         var renderPipelineCreateInfo = new GraphicsPipelineCreateInfo
         {
