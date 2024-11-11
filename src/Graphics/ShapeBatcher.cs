@@ -14,7 +14,7 @@ public class ShapeBatcher
     private int _circleCount = 0;
     private int _rectangleCount = 0;
     const int MAX_FILLED_RECTANGLE_COUNT = 4096;
-    const int MAX_WIRE_CIRCLE_COUNT = 1;
+    const int MAX_WIRE_CIRCLE_COUNT = 2;
     const int FILLED_RECTANGLE_INDEX_COUNT = 6;
     const int FILLED_RECTANGLE_VERTEX_COUNT = 4;
     const int CIRCLE_LINE_VERTEX_COUNT = 2;
@@ -275,6 +275,18 @@ public class ShapeBatcher
         {
             Position = new Vector4(100, 200, 0, 1),
             Color = color.ToVector4()
+        };
+
+        dataSpan[2] = new PositionColorVertex
+        {
+            Position = new Vector4(float.NaN, float.NaN, float.NaN, 1),
+            Color = new Vector4(float.NaN, float.NaN, float.NaN, 1),
+        };
+
+        dataSpan[3] = new PositionColorVertex
+        {
+            Position = new Vector4(float.NaN, float.NaN, float.NaN, 1),
+            Color = new Vector4(float.NaN, float.NaN, float.NaN, 1),
         };
 
         _lineCircleVertexTransferBuffer.Unmap();
