@@ -407,7 +407,7 @@ public class ShapeBatcher
             renderPass.BindIndexBuffer(_lineCirleIndexBuffer, IndexElementSize.ThirtyTwo);
             commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(
-                MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT, 1, 0, 0, 0);
+                (uint)_circleCount * CIRCLE_LINE_VERTEX_COUNT, 1, 0, 0, 0);
 
             commandBuffer.EndRenderPass(renderPass);
 
