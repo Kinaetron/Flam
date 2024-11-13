@@ -17,6 +17,11 @@
     <ProjectReference Include="..\MoonWorks\MoonWorks.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="shaders\Quad.frag.hlsl" Link="shaders\Color.frag.hlsl" />
+    <Content Update="shaders\ColorPositonMatrix.vert.hlsl" Link="shaders\ColorPositonMatrix.vert.hlsl" />
+  </ItemGroup>
+
   <Import Project=".\CopyMoonlibs.targets" />
 
 </Project>
