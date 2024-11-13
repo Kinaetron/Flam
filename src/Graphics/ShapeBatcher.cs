@@ -133,7 +133,7 @@ public class ShapeBatcher
             },
             DepthStencilState = DepthStencilState.Disable,
             MultisampleState = MultisampleState.None,
-            PrimitiveType = PrimitiveType.LineStrip,
+            PrimitiveType = PrimitiveType.LineList,
             RasterizerState = RasterizerState.CCW_CullNone,
             VertexInputState = VertexInputState.CreateSingleBinding<PositionColorVertex>(),
             VertexShader = _vertexShader,
@@ -157,37 +157,25 @@ public class ShapeBatcher
         _lineCirleIndexBuffer = Buffer.Create<uint>(
             _graphicsDevice,
             BufferUsageFlags.Index,
-            MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT);
+            MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT * 2);
 
         var lineCircleIndexTransferBuffer = TransferBuffer.Create<uint>(
            _graphicsDevice,
            TransferBufferUsage.Upload,
-           MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT);
+           MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT * 2);
 
+        int idx = 0;
         var indexSpan = lineCircleIndexTransferBuffer.Map<uint>(false);
 
-        for (int i = 0; i < MAX_WIRE_CIRCLE_COUNT; i++)
+        for (int circle = 0; circle < MAX_WIRE_CIRCLE_COUNT; circle++)
         {
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 1] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 1);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 2] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 2);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 3] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 3);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 4] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 4);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 5] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 5);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 6] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 6);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 7] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 7);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 8] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 8);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 9] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 9);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 10] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 10);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 11] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 11);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 12] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 12);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 13] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 13);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 14] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 14);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 15] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 15);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 16] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 16);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 17] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 17);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 18] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i + 18);
-            indexSpan[CIRCLE_LINE_VERTEX_COUNT * i + 19] = (uint)(CIRCLE_LINE_VERTEX_COUNT * i);
+            int vertexOffset = circle * CIRCLE_LINE_VERTEX_COUNT;
+
+            for (int i = 0; i < CIRCLE_LINE_VERTEX_COUNT; i++)
+            {
+                indexSpan[idx++] = (uint)(vertexOffset + i);
+                indexSpan[idx++] = (uint)(vertexOffset + (i + 1) % CIRCLE_LINE_VERTEX_COUNT);
+            }
         }
 
         lineCircleIndexTransferBuffer.Unmap();
@@ -293,14 +281,15 @@ public class ShapeBatcher
         var dataSpan = _lineCircleVertexTransferBuffer
            .Map<PositionColorVertex>(true);
 
-        for (int i = 0; i < CIRCLE_LINE_VERTEX_COUNT + 1; i++)
+        for (int i = 0; i < CIRCLE_LINE_VERTEX_COUNT; i++)
         {
             float theta = i * angleStep;
             float x = position.X + radius * (float)Math.Cos(theta);
             float y = position.Y + radius * (float)Math.Sin(theta);
 
+            var index = _circleCount * CIRCLE_LINE_VERTEX_COUNT + i;
 
-            dataSpan[_circleCount * CIRCLE_LINE_VERTEX_COUNT + i] = new PositionColorVertex
+            dataSpan[index] = new PositionColorVertex
             {
                 Position = new Vector4(x, y, 0, 1),
                 Color = color.ToVector4()
@@ -400,14 +389,14 @@ public class ShapeBatcher
             renderPass.BindIndexBuffer(_filledRectangleIndexBuffer, IndexElementSize.ThirtyTwo);
             commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(
-                MAX_FILLED_RECTANGLE_COUNT * FILLED_RECTANGLE_INDEX_COUNT, 1, 0, 0, 0);
+                (uint)_rectangleCount * FILLED_RECTANGLE_INDEX_COUNT, 1, 0, 0, 0);
 
             renderPass.BindGraphicsPipeline(_lineCircleRenderPipeline);
             renderPass.BindVertexBuffer(_lineCircleVertexBuffer);
             renderPass.BindIndexBuffer(_lineCirleIndexBuffer, IndexElementSize.ThirtyTwo);
             commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(
-                (uint)_circleCount * CIRCLE_LINE_VERTEX_COUNT, 1, 0, 0, 0);
+                (uint)(_circleCount * 2) * CIRCLE_LINE_VERTEX_COUNT, 1, 0, 0, 0);
 
             commandBuffer.EndRenderPass(renderPass);
 
