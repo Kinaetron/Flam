@@ -1,5 +1,4 @@
 ﻿using Flam.Shapes;
-using Flam.src.Shapes;
 using MoonWorks;
 using MoonWorks.Graphics;
 using System.Numerics;
@@ -18,18 +17,13 @@ public class ShapeBatcher
     const int FILLED_RECTANGLE_INDEX_COUNT = 6;
     const int FILLED_RECTANGLE_VERTEX_COUNT = 4;
     const int CIRCLE_LINE_VERTEX_COUNT = 20;
+    const int CIRCLE_LINE_INDEX_COUNT = 40;
 
     struct RectangleInstanceData
     {
         public Vector3 Position;
         public float Rotation;
         public Vector2 Size;
-        public Vector4 Color;
-    }
-
-    struct CircleInstanceData
-    {
-        public Vector2 Position;
         public Vector4 Color;
     }
 
@@ -68,18 +62,18 @@ public class ShapeBatcher
     private Matrix4x4 _batchMatrix = Matrix4x4.Identity;
 
 
-    private Buffer _filledRectangleIndexBuffer;
-    private Buffer _filledRectangleVertexBuffer;
-    private TransferBuffer _filledRectangleVertexTransferBuffer;
-    private GraphicsPipeline _filledRectangleRenderPipeline;
+    private Buffer? _filledRectangleIndexBuffer;
+    private Buffer? _filledRectangleVertexBuffer;
+    private TransferBuffer? _filledRectangleVertexTransferBuffer;
+    private GraphicsPipeline? _filledRectangleRenderPipeline;
 
-    private Buffer _lineCirleIndexBuffer;
-    private Buffer _lineCircleVertexBuffer;
-    private TransferBuffer _lineCircleVertexTransferBuffer;
-    private GraphicsPipeline _lineCircleRenderPipeline;
+    private Buffer? _lineCirleIndexBuffer;
+    private Buffer? _lineCircleVertexBuffer;
+    private TransferBuffer? _lineCircleVertexTransferBuffer;
+    private GraphicsPipeline? _lineCircleRenderPipeline;
 
-    private Shader _vertexShader;
-    private Shader _fragmentShader;
+    private Shader? _vertexShader;
+    private Shader? _fragmentShader;
 
     public ShapeBatcher(Window window, GraphicsDevice graphicsDevice)
     {
@@ -91,11 +85,8 @@ public class ShapeBatcher
          $"{SDL3.SDL.SDL_GetBasePath()}/shaders/ColorPositonMatrix.vert.hlsl",
          "main",
           ShaderCross.ShaderFormat.HLSL,
-          ShaderStage.Vertex,
-          new ShaderCross.ShaderResourceInfo
-          {
-              NumUniformBuffers = 1
-          });
+          ShaderStage.Vertex
+          );
 
         _fragmentShader = ShaderCross.Create(
             _graphicsDevice,
@@ -157,12 +148,12 @@ public class ShapeBatcher
         _lineCirleIndexBuffer = Buffer.Create<uint>(
             _graphicsDevice,
             BufferUsageFlags.Index,
-            MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT * 2);
+            MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_INDEX_COUNT);
 
         var lineCircleIndexTransferBuffer = TransferBuffer.Create<uint>(
            _graphicsDevice,
            TransferBufferUsage.Upload,
-           MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_VERTEX_COUNT * 2);
+           MAX_WIRE_CIRCLE_COUNT * CIRCLE_LINE_INDEX_COUNT);
 
         int idx = 0;
         var indexSpan = lineCircleIndexTransferBuffer.Map<uint>(false);
@@ -385,18 +376,18 @@ public class ShapeBatcher
             new ColorTargetInfo(swapchainTexture, _clearColor));
 
             renderPass.BindGraphicsPipeline(_filledRectangleRenderPipeline);
-            renderPass.BindVertexBuffer(_filledRectangleVertexBuffer);
+            renderPass.BindVertexBuffers(_filledRectangleVertexBuffer);
             renderPass.BindIndexBuffer(_filledRectangleIndexBuffer, IndexElementSize.ThirtyTwo);
             commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(
                 (uint)_rectangleCount * FILLED_RECTANGLE_INDEX_COUNT, 1, 0, 0, 0);
 
             renderPass.BindGraphicsPipeline(_lineCircleRenderPipeline);
-            renderPass.BindVertexBuffer(_lineCircleVertexBuffer);
+            renderPass.BindVertexBuffers(_lineCircleVertexBuffer);
             renderPass.BindIndexBuffer(_lineCirleIndexBuffer, IndexElementSize.ThirtyTwo);
             commandBuffer.PushVertexUniformData(_batchMatrix);
             renderPass.DrawIndexedPrimitives(
-                (uint)(_circleCount * 2) * CIRCLE_LINE_VERTEX_COUNT, 1, 0, 0, 0);
+                (uint)_circleCount * CIRCLE_LINE_INDEX_COUNT, 1, 0, 0, 0);
 
             commandBuffer.EndRenderPass(renderPass);
 

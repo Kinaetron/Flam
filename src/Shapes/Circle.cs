@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Flam.src.Shapes;
+namespace Flam.Shapes;
 
 public struct Circle
 {
