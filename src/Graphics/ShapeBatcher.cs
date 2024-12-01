@@ -10,8 +10,11 @@ namespace Flam.Graphics;
 
 public class ShapeBatcher
 {
+    private int _lineCount = 0;
     private int _circleCount = 0;
     private int _rectangleCount = 0;
+    const int MAX_LINE_COUNT = 4096;
+    const int LINE_VERTEX_COUNT = 2;
     const int MAX_FILLED_RECTANGLE_COUNT = 4096;
     const int MAX_WIRE_CIRCLE_COUNT = 4096;
     const int FILLED_RECTANGLE_INDEX_COUNT = 6;
@@ -72,6 +75,10 @@ public class ShapeBatcher
     private TransferBuffer? _lineCircleVertexTransferBuffer;
     private GraphicsPipeline? _lineCircleRenderPipeline;
 
+    private Buffer? _lineVertexBuffer;
+    private TransferBuffer? _lineVertexTransferBuffer;
+    private GraphicsPipeline? _lineRenderPipeline;
+
     private Shader? _vertexShader;
     private Shader? _fragmentShader;
 
@@ -104,8 +111,46 @@ public class ShapeBatcher
             0,
             -1f);
 
+        LinePipelineInitalization();
         LineCirclePipelineInitalization();
         FilledRectanglePipelineInitalization();
+    }
+
+    private void LinePipelineInitalization()
+    {
+        var renderPipelineCreateInfo = new GraphicsPipelineCreateInfo
+        {
+            TargetInfo = new GraphicsPipelineTargetInfo
+            {
+                ColorTargetDescriptions = [
+                  new ColorTargetDescription
+                    {
+                        Format = _window.SwapchainFormat,
+                        BlendState = ColorTargetBlendState.Opaque
+                    }
+              ]
+            },
+            DepthStencilState = DepthStencilState.Disable,
+            MultisampleState = MultisampleState.None,
+            PrimitiveType = PrimitiveType.LineList,
+            RasterizerState = RasterizerState.CCW_CullNone,
+            VertexInputState = VertexInputState.CreateSingleBinding<PositionColorVertex>(),
+            VertexShader = _vertexShader,
+            FragmentShader = _fragmentShader
+        };
+
+        _lineRenderPipeline =
+        GraphicsPipeline.Create(_graphicsDevice, renderPipelineCreateInfo);
+
+        _lineVertexBuffer = Buffer.Create<PositionColorVertex>(
+         _graphicsDevice,
+         BufferUsageFlags.Vertex,
+         MAX_LINE_COUNT * LINE_VERTEX_COUNT);
+
+        _lineVertexTransferBuffer = TransferBuffer.Create<PositionColorVertex>(
+          _graphicsDevice,
+          TransferBufferUsage.Upload,
+          MAX_LINE_COUNT * LINE_VERTEX_COUNT);
     }
 
     private void LineCirclePipelineInitalization()
@@ -256,6 +301,31 @@ public class ShapeBatcher
         _clearColor = clearColor;
     }
 
+    public void DrawLineSegment(LineSegment lineSegment, Color color)
+    {
+        if (_lineCount >= MAX_LINE_COUNT) {
+            End();
+        }
+
+        var dataSpan = _lineVertexTransferBuffer
+           .Map<PositionColorVertex>(true);
+
+        dataSpan[_lineCount*LINE_VERTEX_COUNT] = new PositionColorVertex
+        {
+            Position = new Vector4(lineSegment.Point1.X, lineSegment.Point1.Y, 0, 1),
+            Color = color.ToVector4()
+        };
+
+        dataSpan[_lineCount*LINE_VERTEX_COUNT + 1] = new PositionColorVertex
+        {
+            Position = new Vector4(lineSegment.Point2.X, lineSegment.Point2.Y, 0, 1),
+            Color = color.ToVector4()
+        };
+
+        _lineVertexTransferBuffer.Unmap();
+        _lineCount++;
+    }
+
     public void DrawLineCircle(Circle circle, Color color)
     {
         DrawLineCircle(new Vector3(circle.Position, 0), circle.Radius, color);
@@ -362,6 +432,11 @@ public class ShapeBatcher
 
             var copyPass = commandBuffer.BeginCopyPass();
             copyPass.UploadToBuffer(
+                _lineVertexTransferBuffer,
+                _lineVertexBuffer,
+                true);
+
+            copyPass.UploadToBuffer(
                 _filledRectangleVertexTransferBuffer,
                 _filledRectangleVertexBuffer,
                 true);
@@ -374,6 +449,12 @@ public class ShapeBatcher
 
             var renderPass = commandBuffer.BeginRenderPass(
             new ColorTargetInfo(swapchainTexture, _clearColor));
+
+            renderPass.BindGraphicsPipeline(_lineRenderPipeline);
+            renderPass.BindVertexBuffers(_lineVertexBuffer);
+            commandBuffer.PushVertexUniformData(_batchMatrix);
+            renderPass.DrawPrimitives(
+                (uint)_lineCount * LINE_VERTEX_COUNT, 1, 0, 0);
 
             renderPass.BindGraphicsPipeline(_filledRectangleRenderPipeline);
             renderPass.BindVertexBuffers(_filledRectangleVertexBuffer);
@@ -391,6 +472,7 @@ public class ShapeBatcher
 
             commandBuffer.EndRenderPass(renderPass);
 
+            _lineCount = 0;
             _circleCount = 0;
             _rectangleCount = 0;
         }
