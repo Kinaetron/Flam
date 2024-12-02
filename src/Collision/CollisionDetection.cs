@@ -12,6 +12,31 @@ public class CollisionDetection
         rectangle1.Bottom > rectangle2.Top;
 
 
+    public static bool LineSegmentCollidesRectangle(LineSegment lineSegment, Rectangle rectangle)
+    {
+        var rectangleRange = new Range(rectangle.Left, rectangle.Right);
+        var lineSegmentRange = new Range(lineSegment.Point1.X, lineSegment.Point2.X);
+
+        lineSegmentRange = SortedRange(lineSegmentRange);
+
+        if (!OverlappingRanges(rectangleRange, lineSegmentRange))
+            return false;
+
+        rectangleRange.Minimum = rectangle.Top;
+        rectangleRange.Maximum = rectangle.Bottom;
+        lineSegmentRange.Minimum = lineSegment.Point1.Y;
+        lineSegmentRange.Maximum = lineSegment.Point2.Y;
+        lineSegmentRange = SortedRange(lineSegmentRange);
+
+        if (!OverlappingRanges(rectangleRange, lineSegmentRange))
+            return false;
+
+        var lineBase = lineSegment.Point1;
+        var lineDirection = Vector2.Normalize(lineSegment.Point2 - lineSegment.Point1);
+
+        return false;
+    }
+
     public static bool CircleCollidesRectangle(Circle circle, Rectangle rectangle)
     {
         Vector2 clamp = Vector2.Zero;
@@ -25,5 +50,20 @@ public class CollisionDetection
     {
         var distance = circle.Position - point;
         return distance.Length() <= circle.Radius;
+    }
+
+    private static bool OverlappingRanges(Range range1, Range range2) =>
+        range2.Minimum <= range1.Maximum && range1.Minimum <= range2.Maximum;
+
+    private static Range SortedRange(Range range)
+    {
+        var sorted = range;
+        if(range.Minimum > range.Maximum)
+        {
+            sorted.Minimum = range.Maximum;
+            sorted.Maximum = range.Minimum;
+        }
+
+        return sorted;
     }
 }
