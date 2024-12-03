@@ -33,8 +33,26 @@ public class CollisionDetection
 
         var lineBase = lineSegment.Point1;
         var lineDirection = Vector2.Normalize(lineSegment.Point2 - lineSegment.Point1);
+        var lineNormal = new Vector2(-lineDirection.Y, lineDirection.X);
 
-        return false;
+        var corner1 = rectangle.Position;
+        var corner2 = corner1 + new Vector2(rectangle.Width, rectangle.Height);
+        var corner3 = new Vector2(corner2.X, corner1.Y);
+        var corner4 = new Vector2(corner1.X, corner2.Y);
+
+        corner1 -= lineBase;
+        corner2 -= lineBase;
+        corner3 -= lineBase;
+        corner4 -= lineBase;
+
+        var dotProduct1 = Vector2.Dot(lineNormal, corner1);
+        var dotProduct2 = Vector2.Dot(lineNormal, corner2);
+        var dotProduct3 = Vector2.Dot(lineNormal, corner3);
+        var dotProduct4 = Vector2.Dot(lineNormal, corner4);
+
+        return (dotProduct1 * dotProduct2 <= 0) || 
+               (dotProduct2 * dotProduct3 <= 0) ||
+               (dotProduct3 * dotProduct4 <= 0);
     }
 
     public static bool CircleCollidesRectangle(Circle circle, Rectangle rectangle)
