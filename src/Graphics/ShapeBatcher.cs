@@ -1,10 +1,12 @@
-﻿using Flam.Shapes;
+﻿using Flam.Math;
+using Flam.Shapes;
 using MoonWorks;
 using MoonWorks.Graphics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
 using Buffer = MoonWorks.Graphics.Buffer;
+using MathHelper = System.Math;
 
 namespace Flam.Graphics;
 
@@ -226,6 +228,8 @@ public class ShapeBatcher
         _graphicsDevice.Submit(commandBuffer);
     }
 
+  
+
     private void FilledRectanglePipelineInitalization()
     {
         var renderPipelineCreateInfo = new GraphicsPipelineCreateInfo
@@ -301,10 +305,32 @@ public class ShapeBatcher
         _clearColor = clearColor;
     }
 
+    public void DrawFOV(Vector2 origin, float centerAngle, float fovAngle, float length, Color color)
+    {
+        var halfAngle = fovAngle / 2;
+        var fovStart = FlamMathHelper.NormalizeAngle(centerAngle - halfAngle);
+        var fovEnd = FlamMathHelper.NormalizeAngle(centerAngle + halfAngle);
+
+        var point1 = new Vector2(origin.X + length * (float)MathHelper.Cos(fovStart), origin.Y - length * (float)MathHelper.Sin(fovStart));
+        var lineSegment1 = new LineSegment(origin, point1);
+        DrawLineSegment(lineSegment1, color);
+
+        var point2 = new Vector2(origin.X + length * (float)MathHelper.Cos(fovEnd), origin.Y - length * (float)MathHelper.Sin(fovEnd));
+        var lineSegment2 = new LineSegment(origin, point2);
+        DrawLineSegment(lineSegment2, color);
+
+        var lineSegment3 = new LineSegment(point1, point2);
+        DrawLineSegment(lineSegment3, color);
+    }
+
     public void DrawLineSegment(LineSegment lineSegment, Color color)
     {
-        if (_lineCount >= MAX_LINE_COUNT) {
-            End();
+        if (_lineCount > MAX_LINE_COUNT - 1) 
+        {
+            if (!End())
+            {
+                return;
+            }
         }
 
         var dataSpan = _lineVertexTransferBuffer
@@ -333,11 +359,15 @@ public class ShapeBatcher
 
     public void DrawLineCircle(Vector3 position, float radius, Color color)
     {
-        if (_circleCount >= MAX_WIRE_CIRCLE_COUNT) {
-            End();
+        if (_circleCount > MAX_WIRE_CIRCLE_COUNT - 1) 
+        {
+            if (!End())
+            {
+                return;
+            }
         }
 
-        float angleStep = (float)(2 * Math.PI / CIRCLE_LINE_VERTEX_COUNT);
+        float angleStep = (float)(2 * MathHelper.PI / CIRCLE_LINE_VERTEX_COUNT);
 
         var dataSpan = _lineCircleVertexTransferBuffer
            .Map<PositionColorVertex>(true);
@@ -345,8 +375,8 @@ public class ShapeBatcher
         for (int i = 0; i < CIRCLE_LINE_VERTEX_COUNT; i++)
         {
             float theta = i * angleStep;
-            float x = position.X + radius * (float)Math.Cos(theta);
-            float y = position.Y + radius * (float)Math.Sin(theta);
+            float x = position.X + radius * (float)MathHelper.Cos(theta);
+            float y = position.Y + radius * (float)MathHelper.Sin(theta);
 
             var index = _circleCount * CIRCLE_LINE_VERTEX_COUNT + i;
 
@@ -372,8 +402,12 @@ public class ShapeBatcher
 
     public void DrawFilledRectangle(Vector3 position, float rotation, Vector2 size, Color color)
     {
-        if(_rectangleCount >= MAX_FILLED_RECTANGLE_COUNT) {
-            End();
+        if(_rectangleCount > MAX_FILLED_RECTANGLE_COUNT - 1) 
+        {
+            if(!End())
+            {
+                return;
+            }
         }
 
         _rectangleInstanceData[_rectangleCount] = new RectangleInstanceData
@@ -421,7 +455,7 @@ public class ShapeBatcher
 
         _rectangleCount++;
     }
-    public void End()
+    public bool End()
     {
         var commandBuffer = _graphicsDevice.AcquireCommandBuffer();
         var swapchainTexture = commandBuffer.AcquireSwapchainTexture(_window);
@@ -445,6 +479,7 @@ public class ShapeBatcher
               _lineCircleVertexTransferBuffer,
               _lineCircleVertexBuffer,
               true);
+
             commandBuffer.EndCopyPass(copyPass);
 
             var renderPass = commandBuffer.BeginRenderPass(
@@ -475,8 +510,13 @@ public class ShapeBatcher
             _lineCount = 0;
             _circleCount = 0;
             _rectangleCount = 0;
+
+            _graphicsDevice.Submit(commandBuffer);
+
+            return true;
         }
 
         _graphicsDevice.Submit(commandBuffer);
+        return false;
     }
 }

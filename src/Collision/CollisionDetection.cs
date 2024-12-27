@@ -3,6 +3,8 @@ using System.Numerics;
 
 namespace Flam.Collision;
 
+using MathHelper = System.Math;
+
 public class CollisionDetection
 {
     public static bool RectangleCollidesRectangle(Rectangle rectangle1, Rectangle rectangle2) =>
@@ -58,8 +60,8 @@ public class CollisionDetection
     public static bool CircleCollidesRectangle(Circle circle, Rectangle rectangle)
     {
         Vector2 clamp = Vector2.Zero;
-        clamp.X = Math.Clamp(circle.X, rectangle.Left, rectangle.Right);
-        clamp.Y = Math.Clamp(circle.Y, rectangle.Top, rectangle.Bottom);
+        clamp.X = MathHelper.Clamp(circle.X, rectangle.Left, rectangle.Right);
+        clamp.Y = MathHelper.Clamp(circle.Y, rectangle.Top, rectangle.Bottom);
 
         return CircleCollidePoint(circle, clamp);
     }
