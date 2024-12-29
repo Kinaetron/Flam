@@ -305,21 +305,15 @@ public class ShapeBatcher
         _clearColor = clearColor;
     }
 
-    public void DrawFOV(Vector2 origin, float centerAngle, float fovAngle, float length, Color color)
+    public void DrawLineTriangle(Triangle triangle, Color color)
     {
-        var halfAngle = fovAngle / 2;
-        var fovStart = FlamMathHelper.NormalizeAngle(centerAngle - halfAngle);
-        var fovEnd = FlamMathHelper.NormalizeAngle(centerAngle + halfAngle);
-
-        var point1 = new Vector2(origin.X + length * (float)MathHelper.Cos(fovStart), origin.Y - length * (float)MathHelper.Sin(fovStart));
-        var lineSegment1 = new LineSegment(origin, point1);
+        var lineSegment1 = new LineSegment(triangle.Point1, triangle.Point2);
         DrawLineSegment(lineSegment1, color);
 
-        var point2 = new Vector2(origin.X + length * (float)MathHelper.Cos(fovEnd), origin.Y - length * (float)MathHelper.Sin(fovEnd));
-        var lineSegment2 = new LineSegment(origin, point2);
+        var lineSegment2 = new LineSegment(triangle.Point1, triangle.Point3);
         DrawLineSegment(lineSegment2, color);
 
-        var lineSegment3 = new LineSegment(point1, point2);
+        var lineSegment3 = new LineSegment(triangle.Point2, triangle.Point3);
         DrawLineSegment(lineSegment3, color);
     }
 

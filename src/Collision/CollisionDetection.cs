@@ -1,12 +1,61 @@
-﻿using Flam.Shapes;
+﻿using Flam.Math;
+using Flam.Shapes;
 using System.Numerics;
 
 namespace Flam.Collision;
 
-using MathHelper = System.Math;
+using MathSystem = System.Math;
 
 public class CollisionDetection
 {
+    public static bool TriangleCollidesRectangle(Triangle triangle, Rectangle rectangle)
+    {
+        var rectanglePoints = new Vector2[]
+        {
+            new (rectangle.Left, rectangle.Top),
+            new (rectangle.Right, rectangle.Top),
+            new (rectangle.Right, rectangle.Bottom),
+            new (rectangle.Left, rectangle.Bottom)
+        };
+
+        var trianglePoints = new Vector2[]
+        {
+            triangle.Point1,
+            triangle.Point2,
+            triangle.Point3
+        };
+
+      
+        var rectangleNormals = new Vector2[]
+        {
+            FlamMathHelper.Normal(rectanglePoints[1] - rectanglePoints[0]),
+            FlamMathHelper.Normal(rectanglePoints[2] - rectanglePoints[1]),
+        };
+
+
+        var triangleNormals = new Vector2[]
+        {
+            FlamMathHelper.Normal(trianglePoints[1] - trianglePoints[0]),
+            FlamMathHelper.Normal(trianglePoints[2] - trianglePoints[1]),
+            FlamMathHelper.Normal(trianglePoints[0] - trianglePoints[2])
+        };
+
+        var axes = rectangleNormals.Concat(triangleNormals);
+
+        foreach (var axis in axes)
+        {
+            var rectProjection = ProjectShape(rectanglePoints, axis);
+            var triProjection = ProjectShape(trianglePoints, axis);
+
+            if (!IntervalsOverlap(rectProjection, triProjection))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static bool RectangleCollidesRectangle(Rectangle rectangle1, Rectangle rectangle2) =>
         rectangle1.Left < rectangle2.Right &&
         rectangle1.Right > rectangle2.Left &&
@@ -60,8 +109,8 @@ public class CollisionDetection
     public static bool CircleCollidesRectangle(Circle circle, Rectangle rectangle)
     {
         Vector2 clamp = Vector2.Zero;
-        clamp.X = MathHelper.Clamp(circle.X, rectangle.Left, rectangle.Right);
-        clamp.Y = MathHelper.Clamp(circle.Y, rectangle.Top, rectangle.Bottom);
+        clamp.X = MathSystem.Clamp(circle.X, rectangle.Left, rectangle.Right);
+        clamp.Y = MathSystem.Clamp(circle.Y, rectangle.Top, rectangle.Bottom);
 
         return CircleCollidePoint(circle, clamp);
     }
@@ -86,4 +135,22 @@ public class CollisionDetection
 
         return sorted;
     }
+
+    private static (float min, float max) ProjectShape(Vector2[] points, Vector2 axis)
+    {
+        float min = float.MaxValue;
+        float max = float.MinValue;
+
+        foreach (var point in points)
+        {
+            float projection = Vector2.Dot(point, axis);
+            min = MathSystem.Min(min, projection);
+            max = MathSystem.Max(max, projection);
+        }
+
+        return (min, max);
+    }
+
+    private static bool IntervalsOverlap((float min, float max) a, (float min, float max) b) =>
+        a.max >= b.min && b.max >= a.min;
 }
