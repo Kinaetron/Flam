@@ -1,5 +1,4 @@
-﻿using Flam.Math;
-using Flam.Shapes;
+﻿using Flam.Shapes;
 using MoonWorks;
 using MoonWorks.Graphics;
 using System.Numerics;

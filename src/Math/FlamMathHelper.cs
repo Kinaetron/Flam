@@ -25,4 +25,14 @@ public static class FlamMathHelper
 
     public static Vector2 Normal(Vector2 value) =>
         Vector2.Normalize(new Vector2(value.Y, -value.X));
+
+    public static float Approach(float value, float target, float maxMove)
+    {
+        if(!(value > target))
+        {
+            return MathSystem.Min(value + maxMove, target);
+        }
+
+        return MathSystem.Max(value - maxMove, target);
+    }
 }
