@@ -35,7 +35,7 @@ public class ShapeBatcher
     RectangleInstanceData[] _rectangleInstanceData = 
         new RectangleInstanceData[MAX_FILLED_RECTANGLE_COUNT];
 
-    private Texture _renderTarget;
+    private readonly Texture _renderTarget;
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PositionColorVertex : IVertexType
@@ -83,8 +83,8 @@ public class ShapeBatcher
     private TransferBuffer? _lineVertexTransferBuffer;
     private GraphicsPipeline? _lineRenderPipeline;
 
-    private Shader? _vertexShader;
-    private Shader? _fragmentShader;
+    private readonly Shader? _vertexShader;
+    private readonly Shader? _fragmentShader;
 
     public ShapeBatcher(
         uint resolutionX, 
