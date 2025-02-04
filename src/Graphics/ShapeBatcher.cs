@@ -35,6 +35,8 @@ public class ShapeBatcher
     RectangleInstanceData[] _rectangleInstanceData = 
         new RectangleInstanceData[MAX_FILLED_RECTANGLE_COUNT];
 
+    private readonly Texture _renderTarget;
+
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct PositionColorVertex : IVertexType
     {
@@ -81,10 +83,15 @@ public class ShapeBatcher
     private TransferBuffer? _lineVertexTransferBuffer;
     private GraphicsPipeline? _lineRenderPipeline;
 
-    private Shader? _vertexShader;
-    private Shader? _fragmentShader;
+    private readonly Shader? _vertexShader;
+    private readonly Shader? _fragmentShader;
 
-    public ShapeBatcher(Window window, GraphicsDevice graphicsDevice)
+    public ShapeBatcher(
+        uint resolutionX, 
+        uint resolutionY, 
+        Window window, 
+        GraphicsDevice graphicsDevice
+        )
     {
         _window  = window;
         _graphicsDevice = graphicsDevice;
@@ -107,11 +114,20 @@ public class ShapeBatcher
 
         _worldSpace = Matrix4x4.CreateOrthographicOffCenter(
             0,
-            _window.Width,
-            _window.Height,
+            resolutionX,
+            resolutionY,
             0,
             0,
             -1f);
+
+        _renderTarget =
+            Texture.Create2D(
+                _graphicsDevice,
+                resolutionX,
+                resolutionY,
+                TextureFormat.B8G8R8A8Unorm,
+                TextureUsageFlags.ColorTarget | TextureUsageFlags.Sampler
+                );
 
         LinePipelineInitalization();
         LineCirclePipelineInitalization();
@@ -477,7 +493,7 @@ public class ShapeBatcher
             commandBuffer.EndCopyPass(copyPass);
 
             var renderPass = commandBuffer.BeginRenderPass(
-            new ColorTargetInfo(swapchainTexture, _clearColor));
+            new ColorTargetInfo(_renderTarget, _clearColor));
 
             renderPass.BindGraphicsPipeline(_lineRenderPipeline);
             renderPass.BindVertexBuffers(_lineVertexBuffer);
@@ -505,11 +521,11 @@ public class ShapeBatcher
             _circleCount = 0;
             _rectangleCount = 0;
 
+            commandBuffer.Blit(_renderTarget, swapchainTexture, Filter.Nearest);
             _graphicsDevice.Submit(commandBuffer);
 
             return true;
         }
-
         _graphicsDevice.Submit(commandBuffer);
         return false;
     }
