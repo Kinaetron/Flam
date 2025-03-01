@@ -2,6 +2,7 @@
 using Flam.Shapes;
 using MoonWorks;
 using MoonWorks.Graphics;
+using MoonWorks.Storage;
 using System.Numerics;
 using System.Runtime.InteropServices;
 
@@ -88,7 +89,8 @@ public class ShapeBatcher
 
     public ShapeBatcher(
         uint resolutionX, 
-        uint resolutionY, 
+        uint resolutionY,
+        TitleStorage titleStorage,
         Window window, 
         GraphicsDevice graphicsDevice
         )
@@ -98,7 +100,8 @@ public class ShapeBatcher
 
         _vertexShader = ShaderCross.Create(
          _graphicsDevice,
-         $"{SDL3.SDL.SDL_GetBasePath()}/shaders/ColorPositonMatrix.vert.hlsl",
+         titleStorage,
+         "shaders/ColorPositonMatrix.vert.hlsl",
          "main",
           ShaderCross.ShaderFormat.HLSL,
           ShaderStage.Vertex
@@ -106,7 +109,8 @@ public class ShapeBatcher
 
         _fragmentShader = ShaderCross.Create(
             _graphicsDevice,
-            $"{SDL3.SDL.SDL_GetBasePath()}/shaders/Color.frag.hlsl",
+            titleStorage,
+            $"shaders/Color.frag.hlsl",
             "main",
              ShaderCross.ShaderFormat.HLSL,
              ShaderStage.Fragment

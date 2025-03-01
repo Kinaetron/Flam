@@ -6,6 +6,14 @@ namespace Flam.Collision;
 
 using MathSystem = System.Math;
 
+public struct RaycastResult
+{
+    public bool Hit;
+    public float THitNear;
+    public Vector2 ContactPoint;
+    public Vector2 Normal;
+}
+
 public class CollisionDetection
 {
     public static bool TriangleCollidesRectangle(Triangle triangle, Rectangle rectangle)
@@ -62,6 +70,64 @@ public class CollisionDetection
         rectangle1.Top < rectangle2.Bottom &&
         rectangle1.Bottom > rectangle2.Top;
 
+    public static bool RectangleCollidesPoint(Rectangle rectangle, Vector2 point) =>
+        point.X >= rectangle.Left && 
+        point.Y >= rectangle.Top && 
+        point.X < rectangle.Right && 
+        point.Y < rectangle.Bottom;
+
+    public static RaycastResult MovingRectangleCollidesRectangle(Rectangle moving, Rectangle target, Vector2 velocity)
+    {
+        var result = new RaycastResult { Hit = false, THitNear = 0 };
+
+        if (velocity == Vector2.Zero)
+        {
+            return result;
+        }
+
+        var invVelocity = new Vector2(
+            velocity.X != 0 ? 1.0f / velocity.X : float.MaxValue,
+            velocity.Y != 0 ? 1.0f / velocity.Y : float.MaxValue
+            );
+
+        var tNear = new Vector2(
+            (target.Left - moving.Right) * invVelocity.X,
+            (target.Top - moving.Bottom) * invVelocity.Y);
+
+        var tFar = new Vector2(
+            (target.Right - moving.Left) * invVelocity.X,
+            (target.Bottom - moving.Top) * invVelocity.Y);
+
+        if (tNear.X > tFar.X) (tNear.X, tFar.X) = (tFar.X, tNear.X);
+        if (tNear.Y > tFar.Y) (tNear.Y, tFar.Y) = (tFar.Y, tNear.Y);
+
+        if(tNear.X > tFar.X || tNear.Y > tFar.Y)
+        {
+            return result;
+        }
+
+        result.THitNear = MathF.Max(tNear.X, tNear.Y);
+        var tHitFar = MathF.Min(tFar.X, tFar.Y);
+
+        if(tHitFar < 0 || result.THitNear > 1)
+        {
+            return result;
+        }
+
+        result.Hit = true;
+        result.ContactPoint = moving.Position + velocity * result.THitNear;
+
+        if(tNear.X > tNear.Y)
+        {
+            result.Normal = velocity.X < 0 ? new Vector2(1, 0) : new Vector2(-1, 0);
+        }
+        else
+        {
+            result.Normal = velocity.Y < 0 ? new Vector2(0, 1) : new Vector2(0, -1);
+        }
+
+        return result;
+    }
 
     public static bool LineSegmentCollidesRectangle(LineSegment lineSegment, Rectangle rectangle)
     {

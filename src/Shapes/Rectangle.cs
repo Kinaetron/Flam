@@ -10,9 +10,7 @@ public struct Rectangle
         get => _position;
         set => _position = value;
     }
-
     public readonly Vector2 Center;
-
     public float X
     {
         get => _position.X;
@@ -33,6 +31,14 @@ public struct Rectangle
         _position.Y;
     public readonly float Bottom => 
         _position.Y + Height;
+
+    public Rectangle(float width, float height, float x, float y)
+    {
+        Width = width;
+        Height = height;
+        _position = new Vector2(x, y);
+        Center = new Vector2(x + (width / 2), y + (height / 2));
+    }
 
     public Rectangle(float width, float height, Vector2 position)
     {
