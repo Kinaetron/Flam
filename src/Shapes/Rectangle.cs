@@ -10,7 +10,10 @@ public struct Rectangle
         get => _position;
         set => _position = value;
     }
-    public readonly Vector2 Center;
+    public readonly Vector2 Center
+    {
+        get => new(_position.X + (Width / 2), _position.Y + (Height / 2));
+    }
     public float X
     {
         get => _position.X;
@@ -37,7 +40,6 @@ public struct Rectangle
         Width = width;
         Height = height;
         _position = new Vector2(x, y);
-        Center = new Vector2(x + (width / 2), y + (height / 2));
     }
 
     public Rectangle(float width, float height, Vector2 position)
@@ -45,6 +47,5 @@ public struct Rectangle
         Width = width;
         Height = height;
         _position = position;
-        Center = new Vector2(position.X + (width / 2), position.Y + (height / 2));
     }
 }

@@ -29,4 +29,10 @@ public struct Circle
         Radius = radius;
         _position = position;
     }
+
+    public Circle(float radius, float x, float y)
+    {
+        Radius = radius;
+        _position = new Vector2(x, y);
+    }
 }
