@@ -2,7 +2,7 @@
 
 namespace Flam.Shapes;
 
-public struct Rectangle
+public record struct Rectangle
 {
     private Vector2 _position;
     public Vector2 Position 
@@ -10,7 +10,7 @@ public struct Rectangle
         get => _position;
         set => _position = value;
     }
-    public readonly Vector2 Center
+    public Vector2 Center
     {
         get => new(_position.X + (Width / 2), _position.Y + (Height / 2));
     }
@@ -26,13 +26,13 @@ public struct Rectangle
     }
     public float Width { get; private set; }
     public float Height { get; private set; }
-    public readonly float Left =>
+    public float Left =>
         _position.X;
-    public readonly float Right =>
+    public float Right =>
         _position.X + Width;
-    public readonly float Top => 
+    public float Top => 
         _position.Y;
-    public readonly float Bottom => 
+    public float Bottom => 
         _position.Y + Height;
 
     public Rectangle(float width, float height, float x, float y)

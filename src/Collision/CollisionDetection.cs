@@ -181,6 +181,32 @@ public class CollisionDetection
         return CircleCollidePoint(circle, clamp);
     }
 
+    public static bool CircleCollidesCircle(Circle circle1, Circle circle2)
+    {
+        var radiusSum = circle1.Radius + circle2.Radius;
+        var distance = circle1.Position - circle2.Position;
+
+        return distance.Length() <= radiusSum;
+    }
+
+    public static bool CircleCollidesLineSegment(Circle circle, LineSegment lineSegment)
+    {
+        if(CircleCollidePoint(circle, lineSegment.Point1) || 
+           CircleCollidePoint(circle, lineSegment.Point2))
+        {
+            return true;
+        }
+
+        var distance = lineSegment.Point2 - lineSegment.Point1;
+        var lineCenter = circle.Position - lineSegment.Point1;
+        var projection = lineCenter.Project(distance);
+        var nearest = lineSegment.Point1 + projection;
+
+        return CircleCollidePoint(circle, nearest) &&
+               projection.LengthSquared() <= distance.LengthSquared() &&
+               0 <=  Vector2.Dot(projection, distance);
+    }
+
     private static bool CircleCollidePoint(Circle circle, Vector2 point)
     {
         var distance = circle.Position - point;
