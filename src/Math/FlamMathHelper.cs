@@ -25,4 +25,11 @@ public static class FlamMathHelper
 
     public static Vector2 Normal(Vector2 value) =>
         Vector2.Normalize(new Vector2(value.Y, -value.X));
+
+    public static Vector2 Project(this Vector2 project, Vector2 onto)
+    {
+        float dotProduct = Vector2.Dot(project, onto);
+        float lengthSquared = onto.LengthSquared();
+        return (lengthSquared > 0) ? (dotProduct / lengthSquared) * project : Vector2.Zero;
+    }
 }

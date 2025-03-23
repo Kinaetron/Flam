@@ -2,19 +2,19 @@
 
 namespace Flam.Shapes;
 
-public struct LineSegment
+public record struct LineSegment
 {
     private Vector2 _point1;
     public Vector2 Point1
     {
-        get => _point1;
+        readonly get => _point1;
         set => _point1 = value;
     }
 
     private Vector2 _point2;
     public Vector2 Point2
     {
-        get => _point2;
+        readonly get => _point2;
         set => _point2 = value;
     }
 

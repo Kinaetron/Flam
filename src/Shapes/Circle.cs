@@ -2,7 +2,7 @@
 
 namespace Flam.Shapes;
 
-public struct Circle
+public record struct Circle
 {
     private Vector2 _position;
     public Vector2 Position
@@ -28,5 +28,11 @@ public struct Circle
     {
         Radius = radius;
         _position = position;
+    }
+
+    public Circle(float radius, float x, float y)
+    {
+        Radius = radius;
+        _position = new Vector2(x, y);
     }
 }

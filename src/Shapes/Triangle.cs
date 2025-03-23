@@ -2,7 +2,7 @@
 
 namespace Flam.Shapes;
 
-public struct Triangle
+public record struct Triangle
 {
     public Vector2 Point1;
 
